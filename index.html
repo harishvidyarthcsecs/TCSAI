@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTSight Command Board</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#1a73e8"/>
+                    <path d="M16 6L26 11V21L16 26L6 21V11L16 6Z" stroke="white" stroke-width="2" fill="none"/>
+                    <circle cx="16" cy="16" r="4" fill="white"/>
+                    <line x1="16" y1="6" x2="16" y2="12" stroke="white" stroke-width="1.5"/>
+                    <line x1="26" y1="11" x2="20" y2="14" stroke="white" stroke-width="1.5"/>
+                    <line x1="26" y1="21" x2="20" y2="18" stroke="white" stroke-width="1.5"/>
+                    <line x1="16" y1="26" x2="16" y2="20" stroke="white" stroke-width="1.5"/>
+                    <line x1="6" y1="21" x2="12" y2="18" stroke="white" stroke-width="1.5"/>
+                    <line x1="6" y1="11" x2="12" y2="14" stroke="white" stroke-width="1.5"/>
+                </svg>
+                <span class="logo-text">OTSight <span class="logo-sub">Command Board</span></span>
+            </div>
+        </div>
+        <nav class="header-nav">
+            <button class="nav-btn active" data-view="dashboard" onclick="showView('dashboard')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Dashboard
+            </button>
+            <button class="nav-btn" data-view="report" onclick="showView('report')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Report Issue
+            </button>
+            <button class="nav-btn" data-view="patterns" onclick="showView('patterns')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Patterns
+            </button>
+            <button class="nav-btn" data-view="scoreboard" onclick="showView('scoreboard')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                Scoreboard
+            </button>
+            <button class="nav-btn" data-view="guidelines" onclick="showView('guidelines')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Guidelines
+            </button>
+            <button class="nav-btn" data-view="topology" onclick="showView('topology')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Topology
+            </button>
+        </nav>
+        <div class="threat-score-widget" id="threatWidget">
+            <div class="ts-label">OT RISK</div>
+            <div class="ts-score" id="tsScore">--</div>
+        </div>
+        <div class="header-right">
+            <select id="roleSelector" class="role-selector" onchange="switchRole(this.value)">
+                <option value="staff">🟢 OT Staff</option>
+                <option value="engineer">🔵 OT Engineer</option>
+                <option value="manager">🔴 Plant Manager</option>
+                <option value="admin">⚙️ Admin</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <!-- DASHBOARD VIEW -->
+        <div id="view-dashboard" class="view active">
+            <div class="view-header">
+                <div>
+                    <h1>OT Risk Dashboard</h1>
+                    <p class="view-subtitle" id="dashboard-subtitle">Sriperumbudur Industrial Corridor — Live OT Risk View</p>
+                </div>
+                <div class="view-actions">
+                    <select id="dashboardFilterZone" class="filter-select" onchange="renderDashboard()">
+                        <option value="all">All Zones</option>
+                        <option value="Zone-A">Zone A — Assembly Line 1</option>
+                        <option value="Zone-B">Zone B — SMT &amp; Welding</option>
+                        <option value="Zone-C">Zone C — Paint Shop</option>
+                        <option value="Zone-D">Zone D — Quality Control</option>
+                        <option value="Zone-E">Zone E — Packaging</option>
+                        <option value="Zone-F">Zone F — Utilities</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="exportOEMReport()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export OEM Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI CARDS -->
+            <div class="kpi-grid">
+                <div class="kpi-card kpi-critical" id="kpi-open">
+                    <div class="kpi-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="kpi-open-count">0</div>
+                        <div class="kpi-label">Open OT Issues</div>
+                        <div class="kpi-trend" id="kpi-open-trend"></div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-exposure" id="kpi-exposure">
+                    <div class="kpi-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value">₹<span id="kpi-exposure-value">0</span></div>
+                        <div class="kpi-label">Total ₹ Exposure (Open)</div>
+                        <div class="kpi-trend" id="kpi-exposure-trend"></div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-safety" id="kpi-safety">
+                    <div class="kpi-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="kpi-safety-count">0</div>
+                        <div class="kpi-label">Safety-Relevant Issues</div>
+                        <div class="kpi-trend" id="kpi-safety-trend"></div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-downtime" id="kpi-downtime">
+                    <div class="kpi-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="kpi-downtime-value">0h</div>
+                        <div class="kpi-label">Total Downtime Exposure</div>
+                        <div class="kpi-trend" id="kpi-downtime-trend"></div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-reporting" id="kpi-reporting">
+                    <div class="kpi-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="kpi-reporting-value">0</div>
+                        <div class="kpi-label">Reports This Week</div>
+                        <div class="kpi-trend" id="kpi-reporting-trend"></div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-pattern" id="kpi-patterns">
+                    <div class="kpi-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="kpi-patterns-value">0</div>
+                        <div class="kpi-label">Pattern Clusters Detected</div>
+                        <div class="kpi-trend" id="kpi-patterns-trend"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KILL CHAIN ALERT (between KPI grid and charts) -->
+            <div id="killChainAlert" style="display:none" class="kill-chain-alert"></div>
+
+            <!-- CHARTS ROW -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3 class="chart-title">Incident Trend (Last 30 Days)</h3>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title">₹ Exposure by Zone</h3>
+                    <div class="chart-container">
+                        <canvas id="zoneChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title">Incidents by Category</h3>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INCIDENTS TABLE -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3 class="table-title">Open OT Issues</h3>
+                    <div class="table-filters">
+                        <select id="tableFilterStatus" class="filter-select" onchange="renderIncidentTable()">
+                            <option value="all">All Status</option>
+                            <option value="Open" selected>Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Mitigated">Mitigated</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                        <select id="tableFilterSeverity" class="filter-select" onchange="renderIncidentTable()">
+                            <option value="all">All Severity</option>
+                            <option value="Critical">Critical</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-scroll">
+                    <table class="incident-table" id="incidentTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date/Time</th>
+                                <th>Zone</th>
+                                <th>System</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>₹ Impact</th>
+                                <th>Severity</th>
+                                <th>Safety</th>
+                                <th>Owner</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incidentTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- REPORT VIEW -->
+        <div id="view-report" class="view">
+            <div class="view-header">
+                <div>
+                    <h1>Report an Issue</h1>
+                    <p class="view-subtitle">Quick, simple, blame-free. Takes under 60 seconds.</p>
+                </div>
+            </div>
+
+            <!-- BLAME-FREE BANNER -->
+            <div class="blame-free-banner">
+                <div class="bfb-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div class="bfb-text">
+                    <strong>Blame-free safety log.</strong> Reporting protects the plant and you. Data is used to improve systems, not punish reporters. <a href="#" onclick="showView('guidelines');return false;">Read the guidelines →</a>
+                </div>
+            </div>
+
+            <div class="report-layout">
+                <form id="reportForm" class="report-form" onsubmit="submitReport(event)">
+                    <!-- STEP 1: CONTEXT -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <span class="step-num">1</span>
+                            Where &amp; When
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="reportShift">Shift</label>
+                                <select id="reportShift" required>
+                                    <option value="">Select shift...</option>
+                                    <option value="Morning (6AM-2PM)">Morning (6AM–2PM)</option>
+                                    <option value="Afternoon (2PM-10PM)">Afternoon (2PM–10PM)</option>
+                                    <option value="Night (10PM-6AM)">Night (10PM–6AM)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="reportZone">Zone / Line</label>
+                                <select id="reportZone" required onchange="updateSystemOptions()">
+                                    <option value="">Select zone...</option>
+                                    <option value="Zone-A">Zone A — Assembly Line 1</option>
+                                    <option value="Zone-B">Zone B — SMT &amp; Welding</option>
+                                    <option value="Zone-C">Zone C — Paint Shop</option>
+                                    <option value="Zone-D">Zone D — Quality Control</option>
+                                    <option value="Zone-E">Zone E — Packaging</option>
+                                    <option value="Zone-F">Zone F — Utilities / Boiler</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="reportSystem">System <span class="label-hint">(or "Not sure")</span></label>
+                                <select id="reportSystem">
+                                    <option value="">Select system...</option>
+                                    <option value="Unknown">Not sure / Unknown</option>
+                                    <option value="PLC-01">PLC-01 — Assembly Main</option>
+                                    <option value="PLC-02">PLC-02 — Welding Station</option>
+                                    <option value="PLC-03">PLC-03 — Paint Booth</option>
+                                    <option value="PLC-04">PLC-04 — Conveyor</option>
+                                    <option value="HMI-01">HMI-01 — Line A Operator</option>
+                                    <option value="HMI-02">HMI-02 — Line B Operator</option>
+                                    <option value="HMI-03">HMI-03 — Line C Operator</option>
+                                    <option value="SCADA-SERVER">SCADA Server — Plant-wide</option>
+                                    <option value="DCS-01">DCS-01 — Boiler / Utilities</option>
+                                    <option value="NETWORK-SWITCH">Network Switch</option>
+                                    <option value="FIRE-SYSTEM">Fire System Controller</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: QUICK TAGS -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <span class="step-num">2</span>
+                            What happened? (Quick Select)
+                        </div>
+                        <div class="tag-grid">
+                            <button type="button" class="tag-btn" onclick="toggleTag(this, 'PLC Freeze')">
+                                <span class="tag-icon">🧊</span> PLC Freeze / Hang
+                            </button>
+                            <button type="button" class="tag-btn" onclick="toggleTag(this, 'HMI Slow')">
+                                <span class="tag-icon">📺</span> HMI Slow / Freeze
+                            </button>
+                            <button type="button" class="tag-btn" onclick="toggleTag(this, 'USB Seen')">
+                                <span class="tag-icon">💾</span> USB / Pendrive Seen
+                            </button>
+                            <button type="button" class="tag-btn" onclick="toggleTag(this, 'Network Issue')">
+                                <span class="tag-icon">📡</span> Network Issue
+                            </button>
+                            <button type="button" class="tag-btn" onclick="toggleTag(this, 'Strange Popup')">
+                                <span class="tag-icon">⚠️</span> Strange Popup / Error
+                            </button>
+                            <button type="button" class="tag-btn" onclick="toggleTag(this, 'Unauthorized Person')">
+                                <span class="tag-icon">🚫</span> Unauthorized Person
+                            </button>
+                            <button type="button" class="tag-btn" onclick="toggleTag(this, 'Power Fluctuation')">
+                                <span class="tag-icon">⚡</span> Power Fluctuation
+                            </button>
+                            <button type="button" class="tag-btn" onclick="toggleTag(this, 'Safety Interlock')">
+                                <span class="tag-icon">🔒</span> Safety Interlock Trip
+                            </button>
+                            <button type="button" class="tag-btn" onclick="toggleTag(this, 'Sensor Error')">
+                                <span class="tag-icon">🌡️</span> Sensor Error / Drift
+                            </button>
+                            <button type="button" class="tag-btn" onclick="toggleTag(this, 'Vendor Laptop')">
+                                <span class="tag-icon">💻</span> Vendor Laptop Connected
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: DESCRIPTION -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <span class="step-num">3</span>
+                            Describe what you saw <span class="label-hint">(Tamil, English, or Hinglish — any language works)</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="reportDescription">Description <span class="label-hint">— describe what happened in your own words</span></label>
+                            <textarea id="reportDescription" rows="4" placeholder="e.g., PLC screen frozen for 3 minutes during morning shift. Restarted ok. Line stopped for 5 mins.
+Or: USB drive found near PLC cabinet, line 2. Removed and kept with supervisor.
+Or: PLC hang aagiduchu, 3 mins la restart aayithu..."></textarea>
+                            <div class="description-hint">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                Describe what you saw, not who caused it. If you're not sure, that's fine too.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: IMPACT -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <span class="step-num">4</span>
+                            Impact
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="reportDuration">Duration of Issue</label>
+                                <select id="reportDuration" required onchange="onImpactChange()">
+                                    <option value="">Select duration...</option>
+                                    <option value="0.5">Less than 1 minute</option>
+                                    <option value="3">1–5 minutes</option>
+                                    <option value="15">5–30 minutes</option>
+                                    <option value="60">30 min – 1 hour</option>
+                                    <option value="120">1–2 hours</option>
+                                    <option value="240">More than 2 hours</option>
+                                    <option value="0">No downtime (near-miss)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="reportImpact">Perceived Impact</label>
+                                <select id="reportImpact" required onchange="onImpactChange()">
+                                    <option value="">Select impact...</option>
+                                    <option value="none">No downtime — just weird behavior</option>
+                                    <option value="minor">Minor slowdown — continued working</option>
+                                    <option value="temp-stop">Temporary stop — resumed after intervention</option>
+                                    <option value="safety">Safety concern — stopped immediately</option>
+                                    <option value="major">Major stoppage — shift impact</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="impact-preview" id="impactPreview" style="display:none">
+                            <div class="impact-item">
+                                <span class="impact-label">Estimated Downtime</span>
+                                <span class="impact-value" id="impactDowntime">0 min</span>
+                            </div>
+                            <div class="impact-item">
+                                <span class="impact-label">Estimated ₹ Exposure</span>
+                                <span class="impact-value impact-money" id="impactMoney">₹0</span>
+                            </div>
+                            <div class="impact-item">
+                                <span class="impact-label">Safety Flag</span>
+                                <span class="impact-value" id="impactSafety">—</span>
+                            </div>
+                            <div class="impact-item">
+                                <span class="impact-label">Detected Category</span>
+                                <span class="impact-value" id="impactCategory">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 5: REPORTER -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <span class="step-num">5</span>
+                            Your Details <span class="label-hint">(optional anonymity)</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="reportReporter">Your Name</label>
+                                <select id="reportReporter">
+                                    <option value="Anonymous">Anonymous — don't show my name</option>
+                                    <option value="Ramkumar R">Ramkumar R — OT Technician</option>
+                                    <option value="Priya S">Priya S — OT Engineer</option>
+                                    <option value="Karthik M">Karthik M — Shift Supervisor</option>
+                                    <option value="Sundari P">Sundari P — Line Operator</option>
+                                    <option value="Arun V">Arun V — Controls Engineer</option>
+                                    <option value="Visitor">External Visitor</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="reportContact">Contact (optional)</label>
+                                <input type="text" id="reportContact" placeholder="Phone or email — for follow-up questions">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-submit" id="submitBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        Submit Report
+                    </button>
+                </form>
+
+                <!-- RECENT REPORTS SIDEBAR -->
+                <div class="report-sidebar">
+                    <h3 class="sidebar-title">Recent Reports</h3>
+                    <div id="recentReportsSidebar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PATTERNS VIEW -->
+        <div id="view-patterns" class="view">
+            <div class="view-header">
+                <div>
+                    <h1>Pattern Detection</h1>
+                    <p class="view-subtitle">Systemic risks made visible — issues that stay invisible when isolated</p>
+                </div>
+                <div class="view-actions">
+                    <select id="patternWindow" class="filter-select" onchange="renderPatterns()">
+                        <option value="7">Last 7 days</option>
+                        <option value="21" selected>Last 21 days</option>
+                        <option value="30">Last 30 days</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Kill chain section in patterns -->
+            <div id="patternKillChainSection"></div>
+
+            <!-- Anomalous Timing Section -->
+            <div id="patternTimingSection"></div>
+
+            <!-- PATTERN CARDS -->
+            <div class="patterns-grid" id="patternsGrid"></div>
+
+            <!-- PATTERN TABLE -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3 class="table-title">Pattern Cluster Details</h3>
+                </div>
+                <div class="table-scroll">
+                    <table class="incident-table">
+                        <thead>
+                            <tr>
+                                <th>Pattern</th>
+                                <th>Zone</th>
+                                <th>Category</th>
+                                <th>Count</th>
+                                <th>First Report</th>
+                                <th>Last Report</th>
+                                <th>Combined ₹ Exposure</th>
+                                <th>Risk Velocity</th>
+                                <th>Owner</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patternTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- HEATMAP -->
+            <div class="heatmap-card">
+                <h3 class="chart-title">Near-Miss Heatmap — Incidents by Zone &amp; Category (Last 30 Days)</h3>
+                <div class="heatmap-container" id="heatmapContainer"></div>
+            </div>
+        </div>
+
+        <!-- SCOREBOARD VIEW -->
+        <div id="view-scoreboard" class="view">
+            <div class="view-header">
+                <div>
+                    <h1>Safety Reporting Scoreboard</h1>
+                    <p class="view-subtitle">High reporters are safety champions. Reporting is recognized, not penalized.</p>
+                </div>
+            </div>
+
+            <div class="scoreboard-intro">
+                <div class="scoreboard-badge">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                    <div>
+                        <div class="scoreboard-badge-label">Top Reporting Zone This Week</div>
+                        <div class="scoreboard-badge-value" id="topZone">Zone A</div>
+                    </div>
+                </div>
+                <div class="scoreboard-badge">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                    <div>
+                        <div class="scoreboard-badge-label">Most Active Shift</div>
+                        <div class="scoreboard-badge-value" id="topShift">Morning</div>
+                    </div>
+                </div>
+                <div class="scoreboard-badge">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    <div>
+                        <div class="scoreboard-badge-label">Total Reports (30 Days)</div>
+                        <div class="scoreboard-badge-value" id="totalReports30">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3 class="chart-title">Reports by Zone (Last 30 Days)</h3>
+                    <div class="chart-container">
+                        <canvas id="scoreboardZoneChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title">Reports by Shift (Last 30 Days)</h3>
+                    <div class="chart-container">
+                        <canvas id="scoreboardShiftChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-header">
+                    <h3 class="table-title">Reporting Rate by Shift &amp; Zone</h3>
+                </div>
+                <div class="table-scroll">
+                    <table class="incident-table">
+                        <thead>
+                            <tr>
+                                <th>Zone</th>
+                                <th>Morning</th>
+                                <th>Afternoon</th>
+                                <th>Night</th>
+                                <th>Total</th>
+                                <th>Trend vs Last Week</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scoreboardTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="culture-banner">
+                <div class="culture-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div class="culture-text">
+                    <strong>High reporting rate = Strong safety culture.</strong>
+                    Every near-miss reported is a potential incident prevented. OTSight recognizes zones and shifts that lead in proactive reporting. This data is used for recognition only — never for audits or disciplinary action.
+                </div>
+            </div>
+        </div>
+
+        <!-- GUIDELINES VIEW -->
+        <div id="view-guidelines" class="view">
+            <div class="view-header">
+                <div>
+                    <h1>Blame-Free Reporting Guidelines</h1>
+                    <p class="view-subtitle">Know your rights. Report with confidence.</p>
+                </div>
+            </div>
+
+            <div class="guidelines-layout">
+                <div class="guidelines-main">
+                    <div class="guideline-section">
+                        <h2>🎯 Our Commitment</h2>
+                        <p>OTSight Command Board is a <strong>blame-free safety and reliability reporting system</strong>. The goal is to make OT risks visible before they become incidents — not to find fault with individuals.</p>
+                        <p>When you report an issue through OTSight:</p>
+                        <ul>
+                            <li>Your report is used to <strong>improve systems and processes</strong>, not to punish individuals</li>
+                            <li>You can report <strong>anonymously</strong> — no name will be attached</li>
+                            <li>Even if your report turns out to be a false alarm, <strong>you did the right thing</strong> by reporting</li>
+                            <li>Near-miss reports are <strong>valued equally</strong> to incident reports — they show the system is working</li>
+                        </ul>
+                    </div>
+
+                    <div class="guideline-section">
+                        <h2>💡 What to Report</h2>
+                        <div class="report-examples">
+                            <div class="report-example good">
+                                <strong>✅ Report this:</strong>
+                                <p>"PLC screen froze during morning shift. Restarted manually. Line stopped 5 mins."</p>
+                                <p>"USB drive seen near cabinet in Zone C. Removed and given to supervisor."</p>
+                                <p>"Unknown person tried to access SCADA server. Denied. Logged."</p>
+                            </div>
+                            <div class="report-example bad">
+                                <strong>❌ Don't worry about this:</strong>
+                                <p>"Someone left a door open." (That's a physical security issue — not OT cyber.)</p>
+                                <p>"The AC is not working." (That's facilities — not OT cyber.)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guideline-section">
+                        <h2>🔍 How Reports Are Used</h2>
+                        <div class="flow-diagram">
+                            <div class="flow-step">
+                                <div class="flow-icon">📝</div>
+                                <div class="flow-text">You report in plain language</div>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-step">
+                                <div class="flow-icon">🔄</div>
+                                <div class="flow-text">System translates to ₹ impact &amp; risk category</div>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-step">
+                                <div class="flow-icon">👤</div>
+                                <div class="flow-text">Issue assigned to system owner</div>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-step">
+                                <div class="flow-icon">📊</div>
+                                <div class="flow-text">Leadership sees risk as operational KPI</div>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-step">
+                                <div class="flow-icon">🔧</div>
+                                <div class="flow-text">Action taken, you get feedback</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guideline-section">
+                        <h2>🛡️ Your Protection</h2>
+                        <div class="protection-grid">
+                            <div class="protection-item">
+                                <div class="protection-icon">🙈</div>
+                                <div><strong>Anonymous Option</strong><br>Choose anonymous when submitting. No name shown anywhere.</div>
+                            </div>
+                            <div class="protection-item">
+                                <div class="protection-icon">🔒</div>
+                                <div><strong>Data Used for Systems</strong><br>Reports aggregate into trends. Individual reports are not used for individual performance review.</div>
+                            </div>
+                            <div class="protection-item">
+                                <div class="protection-icon">✅</div>
+                                <div><strong>Good Faith Protection</strong><br>If you reported in good faith and were wrong, you are protected. You cannot be punished for trying.</div>
+                            </div>
+                            <div class="protection-item">
+                                <div class="protection-icon">🏆</div>
+                                <div><strong>Recognition Culture</strong><br>High reporters and zones are recognized, not audited. Your reporting rate is a badge of honor.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guideline-section">
+                        <h2>⚠️ Categories We Track</h2>
+                        <div class="category-grid">
+                            <div class="category-item">
+                                <span class="cat-dot" style="background:#e74c3c"></span>
+                                <strong>Unauthorized Device (USB)</strong><br><small>USB drives, laptops, or devices connected without authorization</small>
+                            </div>
+                            <div class="category-item">
+                                <span class="cat-dot" style="background:#f39c12"></span>
+                                <strong>OT Availability</strong><br><small>PLC freeze, HMI hang, SCADA downtime, network outage</small>
+                            </div>
+                            <div class="category-item">
+                                <span class="cat-dot" style="background:#3498db"></span>
+                                <strong>Suspicious Activity</strong><br><small>Strange popups, malware-like behavior, unauthorized access attempts</small>
+                            </div>
+                            <div class="category-item">
+                                <span class="cat-dot" style="background:#9b59b6"></span>
+                                <strong>Physical Security</strong><br><small>Unauthorized personnel near control systems, open cabinets</small>
+                            </div>
+                            <div class="category-item">
+                                <span class="cat-dot" style="background:#e67e22"></span>
+                                <strong>Configuration Change</strong><br><small>Unexpected changes to PLC logic, HMI screens, network settings</small>
+                            </div>
+                            <div class="category-item">
+                                <span class="cat-dot" style="background:#1abc9c"></span>
+                                <strong>Near-Miss / Observation</strong><br><small>Something unusual observed but no impact yet</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOPOLOGY VIEW -->
+        <div id="view-topology" class="view">
+            <div class="view-header">
+                <div>
+                    <h1>OT Network Topology</h1>
+                    <p class="view-subtitle">Purdue Model — Live risk overlay on your OT asset map</p>
+                </div>
+            </div>
+            <div class="topology-layout">
+                <div id="topologyContainer"></div>
+                <div class="topology-sidebar" id="topologySidebar"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- OEM REPORT MODAL -->
+    <div class="modal" id="oemModal" style="display:none">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>OEM Weekly OT Risk Summary</h2>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="oemReportContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="printReport()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Print / Save as PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INCIDENT DETAIL MODAL -->
+    <div class="modal" id="incidentModal" style="display:none">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Incident Detail</h2>
+                <button class="modal-close" onclick="closeIncidentModal()">×</button>
+            </div>
+            <div class="modal-body" id="incidentDetailContent"></div>
+        </div>
+    </div>
+
+    <!-- EVIDENCE MODAL -->
+    <div class="modal" id="evidenceModal" style="display:none">
+        <div class="modal-content" style="max-width:560px">
+            <div class="modal-header">
+                <h2 id="evidenceModalTitle">✅ Report Submitted — Act Now</h2>
+                <button class="modal-close" onclick="closeEvidenceModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="evidence-timer">
+                    <span>⏱</span>
+                    <span>Your report has been logged. Complete these steps in the next <strong>15 minutes</strong> — evidence degrades fast.</span>
+                </div>
+                <div id="evidenceChecklist"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeEvidenceModal()">✓ Done — Back to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast" style="display:none"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
